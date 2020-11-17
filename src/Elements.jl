@@ -31,7 +31,7 @@ function vue_integration(model::M; vue_app_name::String, endpoint::String, chann
   vue_app = replace(vue_app, "\\\\" => "\\")
 
   output = raw"""
-    const watcherMixin = {
+    var watcherMixin = {
       methods: {
         \$withoutWatchers: function (cb, filter) {
           let ww = (filter == null) ? this._watchers : []
@@ -66,12 +66,14 @@ function vue_integration(model::M; vue_app_name::String, endpoint::String, chann
 
   output *= """
   
+  if (typeof(stippleApps) == 'undefined') { var stippleApps = {} }
+  stippleApps['$channel'] = $vue_app_name
   window.parse_payload = function(payload){
     if (payload.key) {
-      window.$(vue_app_name).updateField(payload.key, payload.value)
+      stippleApps[payload.channel].updateField(payload.key, payload.value)
       let vStr = payload.value.toString()
       vStr = vStr.length < 60 ? vStr : vStr.substring(0, 55) + ' ...'
-      window.console.log("server update: ", payload.key + ': ' + vStr)
+      window.console.log("server update (" + payload.channel + "): ", payload.key + ': ' + vStr)
     } else {
       window.console.log("server says: ", payload)
     }

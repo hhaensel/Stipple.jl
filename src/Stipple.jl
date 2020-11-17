@@ -183,7 +183,7 @@ function init(model::M, ui::Union{String,Vector} = ""; vue_app_name::String = St
 
   ep = channel == Genie.config.webchannels_default_route ? endpoint : "js/$channel/$endpoint"
   Genie.Router.route("/$ep") do
-    Stipple.Elements.vue_integration(model, vue_app_name = vue_app_name, endpoint = ep, channel = "", debounce = debounce) |> Genie.Renderer.Js.js
+    Stipple.Elements.vue_integration(model, vue_app_name = vue_app_name, endpoint = ep, channel = channel, debounce = debounce) |> Genie.Renderer.Js.js
   end
 
   setup(model, channel)
@@ -213,7 +213,8 @@ function Base.push!(app::M, vals::Pair{Symbol,T};
                     except::Union{Genie.WebChannels.HTTP.WebSockets.WebSocket,Nothing} = nothing) where {T,M<:ReactiveModel}
   Genie.WebChannels.broadcast(channel,
                               Genie.Renderer.Json.JSONParser.json(Dict( "key" => julia_to_vue(vals[1]),
-                                                                        "value" => Stipple.render(vals[2], vals[1]))),
+                                                                        "value" => Stipple.render(vals[2], vals[1]),
+                                                                        "channel" => channel)),
                               except = except)
 end
 
