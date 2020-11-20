@@ -248,14 +248,14 @@ function julia_to_vue(field, mapping_keys = mapping_keys())
   end
 end
 
-function Stipple.render(app::M, fieldname::Union{Symbol,Nothing} = nothing)::Dict{Symbol,Any} where {M<:ReactiveModel}
+function Stipple.render(app::M, fieldname::Union{Symbol,Nothing} = nothing; channel = Genie.config.webchannels_default_route)::Dict{Symbol,Any} where {M<:ReactiveModel}
   result = Dict{String,Any}()
 
   for field in fieldnames(typeof(app))
     result[julia_to_vue(field)] = Stipple.render(getfield(app, field), field)
   end
 
-  Dict(:el => Elements.elem(app), :data => result, :components => components(typeof(app)), :methods => "{ $(js_methods(app)) }", :mixins =>JSONText("[watcherMixin]"))
+  Dict(:el => Elements.elem(app, channel), :data => result, :components => components(typeof(app)), :methods => "{ $(js_methods(app)) }", :mixins =>JSONText("[watcherMixin]"))
 end
 
 function Stipple.render(val::T, fieldname::Union{Symbol,Nothing} = nothing) where {T}

@@ -9,16 +9,18 @@ export root, elem, vm, @iif, @elsiif, @els, @text, @bind, @data, @click, @on
 
 #===#
 
-function root(app::M)::String where {M<:ReactiveModel}
-  Genie.Generator.validname(typeof(app) |> string)
+function root(app::M, channel::String = Genie.config.webchannels_default_route)::String where {M<:ReactiveModel}
+  Genie.Generator.validname(typeof(app) |> string) *
+    (channel == Genie.config.webchannels_default_route ? "" : "-$channel")
 end
 
-function root(app::Type{M})::String where {M<:ReactiveModel}
-  Genie.Generator.validname(app |> string)
+function root(app::Type{M}, channel::String = Genie.config.webchannels_default_route)::String where {M<:ReactiveModel}
+  Genie.Generator.validname(app |> string) *
+    (channel == Genie.config.webchannels_default_route ? "" : "-$channel")
 end
 
-function elem(app::M)::String where {M<:ReactiveModel}
-  "#$(root(app))"
+function elem(app::M, channel::String = Genie.config.webchannels_default_route)::String where {M<:ReactiveModel}
+  "#$(root(app, channel))"
 end
 
 const vm = root
@@ -26,7 +28,7 @@ const vm = root
 #===#
 
 function vue_integration(model::M; vue_app_name::String, endpoint::String, channel::String, debounce::Int)::String where {M<:ReactiveModel}
-  vue_app = replace(Genie.Renderer.Json.JSONParser.json(model |> Stipple.render), "\"{" => " {")
+  vue_app = replace(Genie.Renderer.Json.JSONParser.json(Stipple.render(model, channel = channel)) , "\"{" => " {")
   vue_app = replace(vue_app, "}\"" => "} ")
   vue_app = replace(vue_app, "\\\\" => "\\")
 
@@ -58,16 +60,19 @@ function vue_integration(model::M; vue_app_name::String, endpoint::String, chann
     }
     """
 
-  output *= "\nvar $vue_app_name = new Vue($vue_app);\n\n"
+  output *= """
+    if (typeof($vue_app_name) == 'undefined') { var $vue_app_name = {} }
+    $(vue_app_name)['$channel'] = new Vue($vue_app);\n\n
+    """
 
   for field in fieldnames(typeof(model))
-    output *= Stipple.watch(vue_app_name, getfield(model, field), field, channel, debounce, model)
+    output *= Stipple.watch(vue_app_name * "['$channel']", getfield(model, field), field, channel, debounce, model)
   end
 
   output *= """
 
   if (typeof(stippleApps) == 'undefined') { var stippleApps = {} }
-  stippleApps['$channel'] = $vue_app_name
+  stippleApps['$channel'] = $vue_app_name['$channel']
   window.parse_payload = function(payload, channel){
     if (payload.key) {
       stippleApps[channel].updateField(payload.key, payload.value)
