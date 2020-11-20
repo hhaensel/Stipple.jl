@@ -65,15 +65,15 @@ function vue_integration(model::M; vue_app_name::String, endpoint::String, chann
   end
 
   output *= """
-  
+
   if (typeof(stippleApps) == 'undefined') { var stippleApps = {} }
   stippleApps['$channel'] = $vue_app_name
-  window.parse_payload = function(payload){
+  window.parse_payload = function(payload, channel){
     if (payload.key) {
-      stippleApps[payload.channel].updateField(payload.key, payload.value)
+      stippleApps[channel].updateField(payload.key, payload.value)
       let vStr = payload.value.toString()
       vStr = vStr.length < 60 ? vStr : vStr.substring(0, 55) + ' ...'
-      window.console.log("server update (" + payload.channel + "): ", payload.key + ': ' + vStr)
+      window.console.log("server update (" + channel + "): ", payload.key + ': ' + vStr)
     } else {
       window.console.log("server says: ", payload)
     }
