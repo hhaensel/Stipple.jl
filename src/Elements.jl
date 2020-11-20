@@ -61,18 +61,17 @@ function vue_integration(model::M; vue_app_name::String, endpoint::String, chann
     """
 
   output *= """
-    if (typeof($vue_app_name) == 'undefined') { var $vue_app_name = {} }
-    $(vue_app_name)['$channel'] = new Vue($vue_app);\n\n
+    $(vue_app_name) = new Vue($vue_app);\n\n
+    if (typeof(stippleApps) == 'undefined') { var stippleApps = {} }
+    stippleApps['$channel'] = $vue_app_name
     """
 
   for field in fieldnames(typeof(model))
-    output *= Stipple.watch(vue_app_name * "['$channel']", getfield(model, field), field, channel, debounce, model)
+    output *= Stipple.watch("stippleApps['$channel']", getfield(model, field), field, channel, debounce, model)
   end
 
   output *= """
 
-  if (typeof(stippleApps) == 'undefined') { var stippleApps = {} }
-  stippleApps['$channel'] = $vue_app_name['$channel']
   window.parse_payload = function(payload, channel){
     if (payload.key) {
       stippleApps[channel].updateField(payload.key, payload.value)
